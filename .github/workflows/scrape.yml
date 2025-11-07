@@ -2,12 +2,13 @@ name: Scrape News
 
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "*/10 * * * *" # every 10 minutes
   workflow_dispatch:
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -17,8 +18,13 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9 # latest stable
+
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Run scraper
         run: pnpm tsx script/scrape.ts
