@@ -4,7 +4,7 @@ import { cacheLife } from "next/cache";
 
 export default async function Home() {
   "use cache";
-  cacheLife("hours");
+  cacheLife("minutes");
   const articles = await getArticles();
 
   return (

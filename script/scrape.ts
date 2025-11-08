@@ -28,7 +28,7 @@ const SOURCES: SourceInfo[] = [
   {
     key: "bloomberg",
     name: "Bloomberg",
-    feed: "https://www.bloomberg.com/feed/podcast/etf-report.xml",
+    feed: "https://feeds.bloomberg.com/markets/news.rss",
   },
   {
     key: "espn",
@@ -84,6 +84,7 @@ async function parseFeed(url: string) {
     if (!res.ok) throw new Error(`Failed to fetch feed: ${res.statusText}`);
     const xml = await res.text();
     const json = await parseStringPromise(xml);
+
     return json.rss.channel[0].item || [];
   } catch (error) {
     console.error(`Error parsing feed ${url}:`, error);
@@ -123,8 +124,7 @@ async function scrape() {
         const publishedAt = item.pubDate ? new Date(item.pubDate[0]) : null;
         const image = extractImage(item);
 
-        // Skip any incomplete articles
-        if (!title || !url || !summary || !image || !publishedAt) {
+        if (!title || !url || !image || !publishedAt) {
           console.warn(
             `⚠️ Skipping incomplete article: ${title || "Untitled"}`
           );
