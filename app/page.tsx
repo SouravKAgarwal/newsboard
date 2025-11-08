@@ -1,7 +1,10 @@
 import { getArticles } from "@/lib/get-articles";
 import NewsFeed from "./_components/news-feed";
+import { cacheLife } from "next/cache";
 
 export default async function Home() {
+  "use cache";
+  cacheLife("hours");
   const articles = await getArticles();
 
   return (

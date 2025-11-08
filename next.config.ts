@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
     optimizeCss: true,
     cssChunking: true,
   },
+  cacheComponents: true,
   images: {
     remotePatterns: [
       {

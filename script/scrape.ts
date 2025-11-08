@@ -4,8 +4,8 @@ import * as cheerio from "cheerio";
 import crypto from "crypto";
 import readingTime from "reading-time";
 import { eq } from "drizzle-orm";
-import { db } from "@/db/drizzle";
-import { articles, sources } from "@/db/schema";
+import { db } from "@/drizzle/db";
+import { articles, sources } from "@/drizzle/schema";
 
 type SourceInfo = {
   key: string;

@@ -1,8 +1,8 @@
 import "server-only";
 
 import { and, desc, eq, isNotNull } from "drizzle-orm";
-import { articles, sources } from "@/db/schema";
-import { db } from "@/db/drizzle";
+import { articles, sources } from "@/drizzle/schema";
+import { db } from "@/drizzle/db";
 
 export type IArticleResponse = {
   id: number;
