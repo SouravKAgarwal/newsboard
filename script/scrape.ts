@@ -12,18 +12,33 @@ type SourceInfo = {
   name: string;
   feed: string;
 };
+
 const SOURCES: SourceInfo[] = [
-  { key: "cnn", name: "CNN", feed: "http://rss.cnn.com/rss/edition.rss" },
+  {
+    key: "cnbc",
+    name: "CNBC",
+    feed: "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+  },
   { key: "bbc", name: "BBC", feed: "https://feeds.bbci.co.uk/news/rss.xml" },
   {
-    key: "aljazeera",
-    name: "Al Jazeera",
-    feed: "https://www.aljazeera.com/xml/rss/all.xml",
-  },
-  {
-    key: "thehindu",
+    key: "the-hindu",
     name: "The Hindu",
     feed: "https://www.thehindu.com/news/national/?service=rss",
+  },
+  {
+    key: "bloomberg",
+    name: "Bloomberg",
+    feed: "https://www.bloomberg.com/feed/podcast/etf-report.xml",
+  },
+  {
+    key: "espn",
+    name: "ESPN",
+    feed: "https://www.espn.com/espn/rss/news",
+  },
+  {
+    key: "sky-sports",
+    name: "Sky Sports",
+    feed: "https://www.skysports.com/rss/12040",
   },
 ];
 
@@ -37,17 +52,28 @@ const cleanHtml = (html: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+const extractImage = (item: any): string | null => {
+  const media = item["media:content"]?.[0]?.$.url;
+  const enclosure = item.enclosure?.[0]?.$.url;
+  const desc = item.description?.[0] || "";
+  const $ = cheerio.load(desc);
+  const img = $("img").attr("src");
+
+  return media || enclosure || img || null;
+};
+
 async function ensureSources() {
   for (const s of SOURCES) {
     const exists = await db
       .select()
       .from(sources)
       .where(eq(sources.key, s.key));
-
     if (exists.length === 0) {
-      await db
-        .insert(sources)
-        .values({ key: s.key, name: s.name, feedUrl: s.feed });
+      await db.insert(sources).values({
+        key: s.key,
+        name: s.name,
+        feedUrl: s.feed,
+      });
     }
   }
 }
@@ -55,9 +81,7 @@ async function ensureSources() {
 async function parseFeed(url: string) {
   try {
     const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error(`Failed to fetch feed: ${res.statusText}`);
-    }
+    if (!res.ok) throw new Error(`Failed to fetch feed: ${res.statusText}`);
     const xml = await res.text();
     const json = await parseStringPromise(xml);
     return json.rss.channel[0].item || [];
@@ -70,9 +94,15 @@ async function parseFeed(url: string) {
 async function scrape() {
   try {
     await ensureSources();
+
+    console.log("🧹 Clearing existing articles...");
+    await db.delete(articles);
+    console.log("✅ All previous articles deleted.");
+
     for (const src of SOURCES) {
       console.log("Fetching", src.name);
       const items = await parseFeed(src.feed);
+
       const [source] = await db
         .select()
         .from(sources)
@@ -86,19 +116,23 @@ async function scrape() {
       for (const item of items.slice(0, 40)) {
         const title = item.title?.[0];
         const url = item.link?.[0];
-
-        if (!title || !url) {
-          console.error("Skipping item: missing title or url");
-          continue;
-        }
-
         const content =
           item["content:encoded"]?.[0] || item.description?.[0] || "";
         const text = cleanHtml(content);
         const summary = text.slice(0, 400);
+        const publishedAt = item.pubDate ? new Date(item.pubDate[0]) : null;
+        const image = extractImage(item);
+
+        // Skip any incomplete articles
+        if (!title || !url || !summary || !image || !publishedAt) {
+          console.warn(
+            `⚠️ Skipping incomplete article: ${title || "Untitled"}`
+          );
+          continue;
+        }
+
         const fp = fingerprint(title + summary);
         const readTimeMins = Math.max(1, Math.round(readingTime(text).minutes));
-        const publishedAt = item.pubDate ? new Date(item.pubDate[0]) : null;
 
         try {
           await db.insert(articles).values({
@@ -111,16 +145,18 @@ async function scrape() {
             readTimeMins,
             language: "en",
             publishedAt,
+            image,
           });
-          console.log(`Inserted: ${title}`);
-        } catch (e) {
-          console.error("Skip duplicate:", title);
+          console.log(`✅ Inserted: ${title}`);
+        } catch {
+          console.log(`⏭️ Duplicate skipped: ${title}`);
         }
       }
     }
-    console.log("Scraping done!");
+
+    console.log("🎉 Scraping complete!");
   } catch (error) {
-    console.error("Scraping failed:", error);
+    console.error("❌ Scraping failed:", error);
   } finally {
     process.exit(0);
   }

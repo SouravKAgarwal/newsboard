@@ -5,6 +5,14 @@ const nextConfig: NextConfig = {
     optimizeCss: true,
     cssChunking: true,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*",
+      },
+    ],
+  },
 };
 
 export default nextConfig;
