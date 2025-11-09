@@ -33,7 +33,7 @@ export default function NewsFeed({
       }
     >
       <section className="grid gap-8">
-        {articles.map((a) => (
+        {articles.map((a, i) => (
           <article
             key={a.id}
             className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden"
@@ -48,6 +48,7 @@ export default function NewsFeed({
                   sizes="(max-width: 768px) 100vw, 380px"
                   preload
                   quality={50}
+                  fetchPriority={i < 5 ? "high" : undefined}
                 />
               </div>
 
