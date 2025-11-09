@@ -7,9 +7,14 @@ const nextConfig: NextConfig = {
   },
   cacheComponents: true,
   images: {
+    qualities: [25, 50],
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "*",
+      },
+      {
+        protocol: "http",
         hostname: "*",
       },
     ],

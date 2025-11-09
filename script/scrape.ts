@@ -3,16 +3,41 @@ import { parseStringPromise } from "xml2js";
 import * as cheerio from "cheerio";
 import crypto from "crypto";
 import readingTime from "reading-time";
+import pLimit from "p-limit";
 import { eq } from "drizzle-orm";
 import { db } from "@/drizzle/db";
 import { articles, sources } from "@/drizzle/schema";
 
+// -------------------------------------------------
+// 🧩 TYPES
+// -------------------------------------------------
 type SourceInfo = {
   key: string;
   name: string;
   feed: string;
 };
 
+type FeedItem = {
+  title?: string[];
+  link?: string[];
+  description?: string[];
+  pubDate?: string[];
+  enclosure?: Array<{ $: { url: string } }>;
+  ["media:content"]?: Array<{ $: { url: string } }>;
+  ["media:thumbnail"]?: Array<{ $: { url: string } }>;
+  ["content:encoded"]?: string[];
+  [key: string]: any;
+};
+
+type ExtractedData = {
+  title: string | null;
+  desc: string;
+  image: string | null;
+};
+
+// -------------------------------------------------
+// 📡 SOURCE CONFIG
+// -------------------------------------------------
 const SOURCES: SourceInfo[] = [
   {
     key: "cnbc",
@@ -30,11 +55,7 @@ const SOURCES: SourceInfo[] = [
     name: "Bloomberg",
     feed: "https://feeds.bloomberg.com/markets/news.rss",
   },
-  {
-    key: "espn",
-    name: "ESPN",
-    feed: "https://www.espn.com/espn/rss/news",
-  },
+  { key: "espn", name: "ESPN", feed: "https://www.espn.com/espn/rss/news" },
   {
     key: "sky-sports",
     name: "Sky Sports",
@@ -42,27 +63,89 @@ const SOURCES: SourceInfo[] = [
   },
 ];
 
-const fingerprint = (text: string) =>
+// -------------------------------------------------
+// 🧠 HELPERS
+// -------------------------------------------------
+const fingerprint = (text: string): string =>
   crypto.createHash("sha256").update(text).digest("hex");
 
-const cleanHtml = (html: string) =>
-  cheerio
-    .load(html || "")("body")
-    .text()
-    .replace(/\s+/g, " ")
-    .trim();
+const cleanHtml = (html: string = ""): string =>
+  cheerio.load(html)("body").text().replace(/\s+/g, " ").trim();
 
-const extractImage = (item: any): string | null => {
+const extractImageGeneric = (item: FeedItem): string | null => {
   const media = item["media:content"]?.[0]?.$.url;
   const enclosure = item.enclosure?.[0]?.$.url;
   const desc = item.description?.[0] || "";
   const $ = cheerio.load(desc);
   const img = $("img").attr("src");
-
   return media || enclosure || img || null;
 };
 
-async function ensureSources() {
+// -------------------------------------------------
+// 🧩 SOURCE-SPECIFIC EXTRACTION
+// -------------------------------------------------
+const extractors: Record<string, (item: FeedItem) => ExtractedData> = {
+  cnbc: (item) => ({
+    image:
+      item["media:content"]?.[0]?.$.url ||
+      item["media:thumbnail"]?.[0]?.$.url ||
+      extractImageGeneric(item),
+    title: item.title?.[0]?.trim() ?? null,
+    desc: cleanHtml(item.description?.[0] || ""),
+  }),
+
+  bbc: (item) => ({
+    image: item["media:thumbnail"]?.[0]?.$.url || extractImageGeneric(item),
+    title: item.title?.[0]?.trim() ?? null,
+    desc: cleanHtml(item.description?.[0] || ""),
+  }),
+
+  "the-hindu": (item) => {
+    const desc = item.description?.[0] || "";
+    const $ = cheerio.load(desc);
+    const img =
+      $("img").attr("src") ||
+      item["media:content"]?.[0]?.$.url ||
+      item.enclosure?.[0]?.$.url;
+    return {
+      image: img ?? null,
+      title: item.title?.[0]?.trim() ?? null,
+      desc: cleanHtml(desc),
+    };
+  },
+
+  bloomberg: (item) => ({
+    image:
+      item["media:thumbnail"]?.[0]?.$.url ||
+      item["media:content"]?.[0]?.$.url ||
+      extractImageGeneric(item),
+    title: item.title?.[0]?.trim() ?? null,
+    desc: cleanHtml(item.description?.[0] || ""),
+  }),
+
+  espn: (item) => ({
+    image:
+      item["media:content"]?.[0]?.$.url ||
+      item.enclosure?.[0]?.$.url ||
+      extractImageGeneric(item),
+    title: item.title?.[0]?.trim() ?? null,
+    desc: cleanHtml(item.description?.[0] || ""),
+  }),
+
+  "sky-sports": (item) => ({
+    image:
+      item["media:content"]?.[0]?.$.url ||
+      item.enclosure?.[0]?.$.url ||
+      extractImageGeneric(item),
+    title: item.title?.[0]?.trim() ?? null,
+    desc: cleanHtml(item.description?.[0] || ""),
+  }),
+};
+
+// -------------------------------------------------
+// 🏗️ DATABASE UTILITIES
+// -------------------------------------------------
+async function ensureSources(): Promise<void> {
   for (const s of SOURCES) {
     const exists = await db
       .select()
@@ -78,85 +161,102 @@ async function ensureSources() {
   }
 }
 
-async function parseFeed(url: string) {
+async function isDuplicate(fp: string): Promise<boolean> {
+  const existing = await db
+    .select()
+    .from(articles)
+    .where(eq(articles.fingerprint, fp));
+  return existing.length > 0;
+}
+
+// -------------------------------------------------
+// 📰 PARSE FEEDS
+// -------------------------------------------------
+async function parseFeed(url: string): Promise<FeedItem[]> {
   try {
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`Failed to fetch feed: ${res.statusText}`);
+    if (!res.ok) throw new Error(`Failed to fetch: ${res.statusText}`);
     const xml = await res.text();
-    const json = await parseStringPromise(xml);
-
-    return json.rss.channel[0].item || [];
-  } catch (error) {
-    console.error(`Error parsing feed ${url}:`, error);
+    const json = (await parseStringPromise(xml)) as any;
+    return json?.rss?.channel?.[0]?.item || [];
+  } catch (err) {
+    console.error(`❌ Error parsing ${url}:`, (err as Error).message);
     return [];
   }
 }
 
-async function scrape() {
+// -------------------------------------------------
+// 🚀 SCRAPER CORE
+// -------------------------------------------------
+async function scrape(): Promise<void> {
   try {
     await ensureSources();
 
-    console.log("🧹 Clearing existing articles...");
-    await db.delete(articles);
-    console.log("✅ All previous articles deleted.");
+    const limit = pLimit(3);
+    const tasks = SOURCES.map((src) =>
+      limit(async () => {
+        console.log(`🔍 Fetching ${src.name}`);
+        const items = await parseFeed(src.feed);
+        const extractor = extractors[src.key];
 
-    for (const src of SOURCES) {
-      console.log("Fetching", src.name);
-      const items = await parseFeed(src.feed);
+        const [source] = await db
+          .select()
+          .from(sources)
+          .where(eq(sources.key, src.key));
 
-      const [source] = await db
-        .select()
-        .from(sources)
-        .where(eq(sources.key, src.key));
+        if (!source) {
+          console.error(`Missing DB source for ${src.key}`);
+          return;
+        }
 
-      if (!source) {
-        console.error(`Source not found for key: ${src.key}`);
-        continue;
-      }
+        for (const item of items.slice(0, 40)) {
+          const { title, desc, image } = extractor(item);
+          const url = item.link?.[0];
+          const publishedAt = item.pubDate ? new Date(item.pubDate[0]) : null;
 
-      for (const item of items.slice(0, 40)) {
-        const title = item.title?.[0];
-        const url = item.link?.[0];
-        const content =
-          item["content:encoded"]?.[0] || item.description?.[0] || "";
-        const text = cleanHtml(content);
-        const summary = text.slice(0, 400);
-        const publishedAt = item.pubDate ? new Date(item.pubDate[0]) : null;
-        const image = extractImage(item);
+          if (!title || !url || !image) {
+            console.warn(`⚠️ Skipping invalid item from ${src.name}`);
+            continue;
+          }
 
-        if (!title || !url || !image || !publishedAt) {
-          console.warn(
-            `⚠️ Skipping incomplete article: ${title || "Untitled"}`
+          const summary = desc.slice(0, 400);
+          const fp = fingerprint(title + summary);
+          const text = cleanHtml(desc);
+          const readTimeMins = Math.max(
+            1,
+            Math.round(readingTime(text).minutes)
           );
-          continue;
+
+          if (await isDuplicate(fp)) {
+            console.log(`⏭️ Duplicate skipped: ${title}`);
+            continue;
+          }
+
+          try {
+            await db.insert(articles).values({
+              sourceId: source.id,
+              title,
+              url,
+              summary,
+              content: text,
+              fingerprint: fp,
+              readTimeMins,
+              language: "en",
+              publishedAt,
+              image,
+            });
+            console.log(`✅ Inserted: ${title}`);
+          } catch (err) {
+            console.error(`❌ DB insert error: ${(err as Error).message}`);
+          }
         }
+      })
+    );
 
-        const fp = fingerprint(title + summary);
-        const readTimeMins = Math.max(1, Math.round(readingTime(text).minutes));
-
-        try {
-          await db.insert(articles).values({
-            sourceId: source.id,
-            title,
-            url,
-            summary,
-            content: text,
-            fingerprint: fp,
-            readTimeMins,
-            language: "en",
-            publishedAt,
-            image,
-          });
-          console.log(`✅ Inserted: ${title}`);
-        } catch {
-          console.log(`⏭️ Duplicate skipped: ${title}`);
-        }
-      }
-    }
-
+    await Promise.all(tasks);
     console.log("🎉 Scraping complete!");
   } catch (error) {
-    console.error("❌ Scraping failed:", error);
+    console.error("❌ Fatal scrape error:", error);
   } finally {
     process.exit(0);
   }

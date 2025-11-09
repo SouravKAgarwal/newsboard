@@ -46,7 +46,8 @@ export default function NewsFeed({
                   fill
                   className="object-cover"
                   sizes="(max-width: 768px) 100vw, 380px"
-                  priority
+                  preload
+                  quality={50}
                 />
               </div>
 
@@ -56,10 +57,7 @@ export default function NewsFeed({
                     {a.sourceName}{" "}
                     {a.publishedAt && (
                       <>
-                        •{" "}
-                        <span>
-                          {new Date(a.publishedAt).toLocaleDateString()}
-                        </span>
+                        • <span>{new Date(a.publishedAt).toDateString()}</span>
                       </>
                     )}
                   </div>
