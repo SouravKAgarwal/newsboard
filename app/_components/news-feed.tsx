@@ -14,10 +14,17 @@ export default function NewsFeed({
   const [hasMore, setHasMore] = useState(true);
 
   const fetchMoreData = () => {
-    const newCount = visibleCount + 10;
-    setArticles(initialArticles.slice(0, newCount));
-    setVisibleCount(newCount);
-    if (newCount >= initialArticles.length) setHasMore(false);
+    setTimeout(() => {
+      const newCount = visibleCount + 10;
+      const nextSlice = initialArticles.slice(0, newCount);
+
+      setArticles(nextSlice);
+      setVisibleCount(newCount);
+
+      if (newCount >= initialArticles.length) {
+        setHasMore(false);
+      }
+    }, 500);
   };
 
   return (
@@ -25,11 +32,20 @@ export default function NewsFeed({
       dataLength={articles.length}
       next={fetchMoreData}
       hasMore={hasMore}
-      loader={<p className="text-center text-gray-500 my-6">Loading...</p>}
+      loader={
+        <div className="flex items-center justify-center my-8">
+          <div className="animate-pulse text-gray-400 tracking-wide text-sm">
+            Loading latest updates…
+          </div>
+        </div>
+      }
       endMessage={
-        <p className="text-center text-gray-400 mt-6">
-          You’ve reached the end.
-        </p>
+        <div className="my-10 text-center">
+          <hr className="border-gray-200 mb-4" />
+          <p className="text-gray-400 text-sm tracking-wide">
+            No more stories to display.
+          </p>
+        </div>
       }
     >
       <section className="grid gap-8">
@@ -46,9 +62,9 @@ export default function NewsFeed({
                   fill
                   className="object-cover"
                   sizes="(max-width: 768px) 100vw, 380px"
-                  preload
-                  quality={50}
-                  fetchPriority={i < 5 ? "high" : undefined}
+                  quality={40}
+                  loading={i < 3 ? "eager" : undefined}
+                  fetchPriority={i < 3 ? "high" : undefined}
                 />
               </div>
 
