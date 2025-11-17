@@ -1,11 +1,8 @@
 import LiveFeed from "../_components/live-feed";
 import Link from "next/link";
-import { cacheLife } from "next/cache";
 import { getLiveArticles } from "@/lib/get-articles";
 
 export default async function LivePage() {
-  "use cache";
-  cacheLife("minutes");
   const articles = await getLiveArticles();
 
   return (
