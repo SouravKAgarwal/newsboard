@@ -27,6 +27,6 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run scraper
-        run: pnpm tsx script/scrape.ts
+        run: pnpm tsx script/live-news-scrape.ts
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
