@@ -4,22 +4,12 @@ import { useState } from "react";
 import Image from "next/image";
 import InfiniteScroll from "react-infinite-scroll-component";
 import FeedSkeleton from "./feed-skeleton";
-
-interface LiveArticle {
-  id: number;
-  title: string;
-  url: string;
-  summary: string;
-  publishedAt: Date;
-  readTimeMins: number;
-  sourceName: string;
-  image: string;
-}
+import type { IArticleResponse } from "@/lib/get-articles";
 
 export default function LiveFeed({
   initialArticles,
 }: {
-  initialArticles: LiveArticle[];
+  initialArticles: IArticleResponse[];
 }) {
   const [articles, setArticles] = useState(initialArticles.slice(0, 12));
   const [visibleCount, setVisibleCount] = useState(12);
@@ -77,6 +67,7 @@ export default function LiveFeed({
                   sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   quality={40}
                   loading={i < 3 ? "eager" : undefined}
+                  priority={i <= 1}
                   fetchPriority={i < 3 ? "high" : undefined}
                 />
               </div>

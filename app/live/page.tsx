@@ -11,6 +11,7 @@ export default async function LivePage() {
     <main className="max-w-7xl mx-auto px-6 py-10 text-[#1C1C1C]">
       <header className="mb-10">
         <Link
+          prefetch={false}
           href="/"
           className="text-blue-600 hover:text-blue-700 text-sm font-medium mb-4 inline-block"
         >

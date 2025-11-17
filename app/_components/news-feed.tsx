@@ -3,16 +3,38 @@
 import { useState, useMemo } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import Image from "next/image";
-import type { ISourceResponse } from "@/lib/get-articles";
-import Badge from "./badge";
+import type { IArticleResponse, ISourceResponse } from "@/lib/get-articles";
 import Link from "next/link";
 import FeedSkeleton from "./feed-skeleton";
+
+function Badge({ children }: { children: React.ReactNode }) {
+  return (
+    <span
+      className="inline-flex items-center justify-center rounded-full px-3 py-1 text-sm font-semibold shadow-sm transition-transform duration-300 cursor-pointer"
+      style={{
+        border: "2px solid transparent",
+        background:
+          "linear-gradient(#ffffff,#ffffff) padding-box, linear-gradient(90deg, red, green, blue, yellow) border-box",
+        backgroundSize: "200% 100%",
+        transition: "transform .3s ease, background-position .6s ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundPosition = "100% 0";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundPosition = "0 0";
+      }}
+    >
+      {children}
+    </span>
+  );
+}
 
 export default function NewsFeed({
   initialArticles,
   sources,
 }: {
-  initialArticles: any[];
+  initialArticles: IArticleResponse[];
   sources: ISourceResponse[];
 }) {
   const [selectedSourceId, setSelectedSourceId] = useState<number | null>(null);
@@ -47,7 +69,7 @@ export default function NewsFeed({
   };
 
   return (
-    <div>
+    <>
       <div className="mb-10 flex flex-wrap gap-3 items-center">
         <button
           onClick={() => handleSourceClick(null)}
@@ -59,7 +81,7 @@ export default function NewsFeed({
         >
           All Sources
         </button>
-        <Link href="/live">
+        <Link href="/live" prefetch={false}>
           <Badge>Live</Badge>
         </Link>
         {sources.map((source) => (
@@ -108,6 +130,7 @@ export default function NewsFeed({
                   sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   quality={40}
                   loading={i < 3 ? "eager" : undefined}
+                  priority={i <= 1}
                   fetchPriority={i < 3 ? "high" : undefined}
                 />
               </div>
@@ -142,7 +165,7 @@ export default function NewsFeed({
                   <a
                     href={a.url}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noreferrer noopener"
                     className="font-semibold text-blue-600 hover:text-blue-700 transition-colors text-sm"
                   >
                     Read →
@@ -153,6 +176,6 @@ export default function NewsFeed({
           ))}
         </section>
       </InfiniteScroll>
-    </div>
+    </>
   );
 }

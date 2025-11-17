@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizeCss: true,
     cssChunking: true,
+    inlineCss: true,
   },
   images: {
     qualities: [40],
