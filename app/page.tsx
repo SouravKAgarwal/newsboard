@@ -1,10 +1,9 @@
 import { getArticles, getSources } from "@/lib/get-articles";
+import { Suspense } from "react";
+import FeedSkeleton from "./_components/feed-skeleton";
 import NewsFeed from "./_components/news-feed";
-import { cacheLife } from "next/cache";
 
 export default async function Home() {
-  "use cache";
-  cacheLife("news");
   const [articles, sources] = await Promise.all([getArticles(), getSources()]);
 
   return (
@@ -18,7 +17,9 @@ export default async function Home() {
         </p>
       </header>
 
-      <NewsFeed initialArticles={articles} sources={sources} />
+      <Suspense fallback={<FeedSkeleton />}>
+        <NewsFeed initialArticles={articles} sources={sources} />
+      </Suspense>
     </main>
   );
 }

@@ -1,11 +1,10 @@
-import LiveFeed from "../_components/live-feed";
-import Link from "next/link";
 import { getLiveArticles } from "@/lib/get-articles";
+import Link from "next/link";
 import { Suspense } from "react";
 import FeedSkeleton from "../_components/feed-skeleton";
+import LiveFeed from "../_components/live-feed";
 
 export default async function LivePage() {
-  "use cache";
   const articles = await getLiveArticles();
 
   return (
