@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import InfiniteScroll from "react-infinite-scroll-component";
+import FeedSkeleton from "./feed-skeleton";
 
 interface LiveArticle {
   id: number;
@@ -42,13 +43,7 @@ export default function LiveFeed({
       dataLength={articles.length}
       next={fetchMoreData}
       hasMore={hasMore}
-      loader={
-        <div className="flex items-center justify-center my-8">
-          <div className="animate-pulse text-gray-400 tracking-wide text-sm">
-            Loading latest updates…
-          </div>
-        </div>
-      }
+      loader={<FeedSkeleton />}
       endMessage={
         <div className="my-10 text-center">
           <hr className="border-gray-200 mb-4" />

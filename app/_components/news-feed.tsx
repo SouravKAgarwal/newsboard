@@ -6,6 +6,7 @@ import Image from "next/image";
 import type { ISourceResponse } from "@/lib/get-articles";
 import Badge from "./badge";
 import Link from "next/link";
+import FeedSkeleton from "./feed-skeleton";
 
 export default function NewsFeed({
   initialArticles,
@@ -80,13 +81,7 @@ export default function NewsFeed({
         dataLength={articles.length}
         next={fetchMoreData}
         hasMore={hasMore}
-        loader={
-          <div className="flex items-center justify-center my-8">
-            <div className="animate-pulse text-gray-400 tracking-wide text-sm">
-              Loading latest updates…
-            </div>
-          </div>
-        }
+        loader={<FeedSkeleton />}
         endMessage={
           <div className="my-10 text-center">
             <hr className="border-gray-200 mb-4" />

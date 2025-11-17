@@ -1,8 +1,11 @@
 import LiveFeed from "../_components/live-feed";
 import Link from "next/link";
 import { getLiveArticles } from "@/lib/get-articles";
+import { Suspense } from "react";
+import FeedSkeleton from "../_components/feed-skeleton";
 
 export default async function LivePage() {
+  "use cache";
   const articles = await getLiveArticles();
 
   return (
@@ -22,7 +25,9 @@ export default async function LivePage() {
         </p>
       </header>
 
-      <LiveFeed initialArticles={articles} />
+      <Suspense fallback={<FeedSkeleton />}>
+        <LiveFeed initialArticles={articles} />
+      </Suspense>
     </main>
   );
 }
