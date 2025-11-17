@@ -6,7 +6,7 @@ import readingTime from "reading-time";
 import pLimit from "p-limit";
 import { eq } from "drizzle-orm";
 import { db } from "@/drizzle/db";
-import { articles, sources } from "@/drizzle/schema";
+import { liveArticles, sources } from "@/drizzle/schema";
 
 // -------------------------------------------------
 // 🧩 TYPES
@@ -168,8 +168,8 @@ async function ensureSources(): Promise<void> {
 async function isDuplicate(fp: string): Promise<boolean> {
   const existing = await db
     .select()
-    .from(articles)
-    .where(eq(articles.fingerprint, fp));
+    .from(liveArticles)
+    .where(eq(liveArticles.fingerprint, fp));
   return existing.length > 0;
 }
 
@@ -196,8 +196,8 @@ async function scrape(): Promise<void> {
   try {
     await ensureSources();
 
-    await db.delete(articles);
-    console.log("🧹 Cleared articles table");
+    await db.delete(liveArticles);
+    console.log("🧹 Cleared liveArticles table");
 
     const limit = pLimit(3);
     const tasks = SOURCES.map((src) =>
@@ -240,7 +240,7 @@ async function scrape(): Promise<void> {
           }
 
           try {
-            await db.insert(articles).values({
+            await db.insert(liveArticles).values({
               sourceId: source.id,
               title,
               url,

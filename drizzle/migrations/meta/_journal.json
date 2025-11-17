@@ -8,6 +8,13 @@
       "when": 1762526746641,
       "tag": "0000_lively_miracleman",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1763365664244,
+      "tag": "0001_bright_gambit",
+      "breakpoints": true
     }
   ]
 }

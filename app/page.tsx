@@ -1,14 +1,14 @@
-import { getArticles } from "@/lib/get-articles";
+import { getArticles, getSources } from "@/lib/get-articles";
 import NewsFeed from "./_components/news-feed";
 import { cacheLife } from "next/cache";
 
 export default async function Home() {
   "use cache";
   cacheLife("news");
-  const articles = await getArticles();
+  const [articles, sources] = await Promise.all([getArticles(), getSources()]);
 
   return (
-    <main className="max-w-6xl mx-auto px-6 py-10 text-[#1C1C1C]">
+    <main className="max-w-7xl mx-auto px-6 py-10 text-[#1C1C1C]">
       <header className="mb-10 text-center">
         <h1 className="text-4xl font-extrabold tracking-tight uppercase">
           Global Headlines
@@ -18,7 +18,7 @@ export default async function Home() {
         </p>
       </header>
 
-      <NewsFeed initialArticles={articles} />
+      <NewsFeed initialArticles={articles} sources={sources} />
     </main>
   );
 }
