@@ -21,8 +21,18 @@ export type ISourceResponse = {
   name: string;
   key: string;
 };
+export async function getArticles(key?: string): Promise<IArticleResponse[]> {
+  const conditions = [
+    isNotNull(articles.image),
+    isNotNull(articles.summary),
+    isNotNull(articles.publishedAt),
+    isNotNull(articles.readTimeMins),
+  ];
 
-export async function getArticles(): Promise<IArticleResponse[]> {
+  if (key) {
+    conditions.push(eq(sources.key, key));
+  }
+
   const rows = await db
     .select({
       id: articles.id,
@@ -37,14 +47,7 @@ export async function getArticles(): Promise<IArticleResponse[]> {
     })
     .from(articles)
     .innerJoin(sources, eq(articles.sourceId, sources.id))
-    .where(
-      and(
-        isNotNull(articles.image),
-        isNotNull(articles.summary),
-        isNotNull(articles.publishedAt),
-        isNotNull(articles.readTimeMins)
-      )
-    )
+    .where(and(...conditions))
     .orderBy(desc(articles.publishedAt));
 
   return rows as IArticleResponse[];

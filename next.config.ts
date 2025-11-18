@@ -6,14 +6,6 @@ const nextConfig: NextConfig = {
     cssChunking: true,
     inlineCss: true,
   },
-  cacheComponents: true,
-  cacheLife: {
-    news: {
-      stale: 60,
-      revalidate: 60,
-      expire: 120,
-    },
-  },
   images: {
     qualities: [40],
     remotePatterns: [

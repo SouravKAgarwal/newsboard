@@ -1,5 +1,3 @@
-"use client";
-
 import { timeAgo } from "@/lib/time";
 
 const TimeAgoSkeleton = () => {

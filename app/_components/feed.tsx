@@ -21,7 +21,7 @@ function Feed({ articles }: { articles: IArticleResponse[] }) {
                 src={a.image}
                 alt={a.title}
                 fill
-                className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                className="object-cover object-center"
                 sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 quality={40}
                 loading={i < 6 ? "eager" : undefined}
