@@ -1,6 +1,7 @@
 import { IArticleResponse } from "@/lib/get-articles";
-import { timeAgo } from "@/lib/time";
 import Image from "next/image";
+import { TimeAgo, TimeAgoSkeleton } from "./time-ago";
+import { Suspense } from "react";
 
 function Feed({ articles }: { articles: IArticleResponse[] }) {
   return (
@@ -35,11 +36,9 @@ function Feed({ articles }: { articles: IArticleResponse[] }) {
                   <span className="inline-block px-3 py-1 bg-red-50 text-red-700 text-xs font-semibold rounded-full">
                     {a.sourceName}
                   </span>
-                  {a.publishedAt && (
-                    <span className="text-xs text-gray-500">
-                      {timeAgo(a.publishedAt)}
-                    </span>
-                  )}
+                  <Suspense fallback={<TimeAgoSkeleton />}>
+                    {a.publishedAt && <TimeAgo date={a.publishedAt} />}
+                  </Suspense>
                 </div>
                 <h2 className="text-lg font-bold leading-snug text-gray-900 group-hover:text-red-600 transition-colors line-clamp-3">
                   {a.title}
