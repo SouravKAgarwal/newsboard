@@ -40,6 +40,11 @@ type ExtractedData = {
 // -------------------------------------------------
 const SOURCES: SourceInfo[] = [
   {
+    key: "indian-express",
+    name: "The Indian Express",
+    feed: "https://indianexpress.com/feed/",
+  },
+  {
     key: "times-of-india",
     name: "Times of India",
     feed: "https://timesofindia.indiatimes.com/rssfeedstopstories.cms",
@@ -57,7 +62,7 @@ const SOURCES: SourceInfo[] = [
   },
   {
     key: "espn",
-    name: "ESPN",
+    name: "ESPN Cricinfo",
     feed: "https://www.espncricinfo.com/rss/content/story/feeds/0.xml",
   },
   {
@@ -90,6 +95,15 @@ const extractImageGeneric = (item: FeedItem): string | null => {
 // -------------------------------------------------
 const extractors: Record<string, (item: FeedItem) => ExtractedData> = {
   "times-of-india": (item) => ({
+    image:
+      item["media:content"]?.[0]?.$.url ||
+      item["media:thumbnail"]?.[0]?.$.url ||
+      extractImageGeneric(item),
+    title: item.title?.[0]?.trim() ?? null,
+    desc: cleanHtml(item.description?.[0] || ""),
+  }),
+
+  "indian-express": (item) => ({
     image:
       item["media:content"]?.[0]?.$.url ||
       item["media:thumbnail"]?.[0]?.$.url ||

@@ -15,6 +15,13 @@
       "when": 1763365664244,
       "tag": "0001_bright_gambit",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1763450484695,
+      "tag": "0002_wise_sauron",
+      "breakpoints": true
     }
   ]
 }

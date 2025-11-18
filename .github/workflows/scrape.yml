@@ -26,7 +26,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run scraper
+      - name: Run main scraper
         run: pnpm tsx script/scrape.ts
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

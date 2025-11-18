@@ -33,22 +33,3 @@ export const articles = pgTable("articles", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
-
-export const liveArticles = pgTable("live-articles", {
-  id: serial("id").primaryKey(),
-  sourceId: integer("source_id")
-    .notNull()
-    .references(() => sources.id),
-  title: text("title").notNull(),
-  url: text("url").notNull().unique(),
-  summary: text("summary"),
-  content: text("content"),
-  publishedAt: timestamp("published_at"),
-  author: text("author"),
-  image: text("image"),
-  fingerprint: varchar("fingerprint", { length: 64 }).notNull().unique(),
-  readTimeMins: integer("read_time_mins"),
-  language: varchar("language", { length: 10 }),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
