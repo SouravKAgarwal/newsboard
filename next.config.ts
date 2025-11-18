@@ -10,8 +10,8 @@ const nextConfig: NextConfig = {
   cacheLife: {
     news: {
       stale: 60,
-      revalidate: 300,
-      expire: 600,
+      revalidate: 60,
+      expire: 120,
     },
   },
   images: {
