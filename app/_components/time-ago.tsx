@@ -1,4 +1,5 @@
 import { timeAgo } from "@/lib/time";
+import { Suspense } from "react";
 
 const TimeAgoSkeleton = () => {
   return (
@@ -7,7 +8,11 @@ const TimeAgoSkeleton = () => {
 };
 
 const TimeAgo = ({ date }: { date: Date }) => {
-  return <span className="text-xs text-gray-500">{timeAgo(date)}</span>;
+  return (
+    <Suspense fallback={<TimeAgoSkeleton />}>
+      <span className="text-xs text-gray-500">{timeAgo(date)}</span>
+    </Suspense>
+  );
 };
 
-export { TimeAgo, TimeAgoSkeleton };
+export default TimeAgo;
