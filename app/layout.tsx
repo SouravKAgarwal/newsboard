@@ -34,7 +34,6 @@ export default async function RootLayout({
                 <Link
                   href="/"
                   className="px-4 py-2 rounded-full bg-black text-white text-sm font-medium whitespace-nowrap transition-all hover:opacity-90"
-                  prefetch={false}
                 >
                   All Sources
                 </Link>
@@ -45,7 +44,6 @@ export default async function RootLayout({
                   <Link
                     href={`/${s.key}`}
                     className="px-4 py-2 rounded-full bg-gray-100 text-gray-800 text-sm font-medium whitespace-nowrap transition-all hover:bg-gray-200"
-                    prefetch={false}
                   >
                     {s.name}
                   </Link>
