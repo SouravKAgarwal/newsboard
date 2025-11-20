@@ -2,7 +2,6 @@ import "./globals.css";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getSources } from "@/lib/get-articles";
-import Matches from "./_components/matches";
 
 export const metadata: Metadata = {
   title: "Global Headlines",
@@ -53,7 +52,6 @@ export default async function RootLayout({
           </nav>
         </header>
 
-        <Matches />
         <main className="container max-w-7xl mx-auto pt-5 pb-10 text-[#1C1C1C]">
           {children}
         </main>

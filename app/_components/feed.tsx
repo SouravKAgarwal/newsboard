@@ -22,6 +22,7 @@ function Feed({ articles }: { articles: IArticleResponse[] }) {
               loading={i < 6 ? "eager" : undefined}
               priority={i < 3}
               fetchPriority={i < 6 ? "high" : undefined}
+              unoptimized
             />
           </div>
 
