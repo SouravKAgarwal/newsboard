@@ -2,6 +2,8 @@ import "./globals.css";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getSources } from "@/lib/get-articles";
+import Search from "./_components/search";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Global Headlines",
@@ -27,8 +29,13 @@ export default async function RootLayout({
               Curated from trusted international sources
             </p>
           </div>
+          <div className="max-w-md mx-auto mt-6">
+            <Suspense>
+              <Search />
+            </Suspense>
+          </div>
           <nav className="mt-8">
-            <ul className="flex gap-5 flex-wrap py-2">
+            <ul className="flex gap-5 flex-wrap py-2 justify-center">
               <li>
                 <Link
                   href="/"

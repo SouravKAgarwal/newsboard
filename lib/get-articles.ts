@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, isNotNull, ne } from "drizzle-orm";
+import { and, desc, eq, isNotNull, ne, or, sql, type SQL } from "drizzle-orm";
 import { articles, sources } from "@/drizzle/schema";
 import { db } from "@/drizzle/db";
 
@@ -21,8 +21,15 @@ export type ISourceResponse = {
   name: string;
   key: string;
 };
-export async function getArticles(key?: string): Promise<IArticleResponse[]> {
-  const conditions = [
+export async function getArticles(
+  key?: string,
+  page: number = 1,
+  query?: string
+): Promise<IArticleResponse[]> {
+  const pageSize = 12;
+  const offset = (page - 1) * pageSize;
+
+  const conditions: (SQL | undefined)[] = [
     isNotNull(articles.image),
     isNotNull(articles.summary),
     isNotNull(articles.publishedAt),
@@ -31,6 +38,15 @@ export async function getArticles(key?: string): Promise<IArticleResponse[]> {
 
   if (key) {
     conditions.push(eq(sources.key, key));
+  }
+
+  if (query) {
+    conditions.push(
+      or(
+        sql`${articles.title} ILIKE ${`%${query}%`}`,
+        sql`${articles.summary} ILIKE ${`%${query}%`}`
+      )!
+    );
   }
 
   const rows = await db
@@ -48,7 +64,9 @@ export async function getArticles(key?: string): Promise<IArticleResponse[]> {
     .from(articles)
     .innerJoin(sources, eq(articles.sourceId, sources.id))
     .where(and(...conditions))
-    .orderBy(desc(articles.publishedAt));
+    .orderBy(desc(articles.publishedAt))
+    .limit(pageSize)
+    .offset(offset);
 
   return rows as IArticleResponse[];
 }
