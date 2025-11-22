@@ -1,8 +1,9 @@
 import "server-only";
 
-import { and, desc, eq, isNotNull, ne, or, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, isNotNull, type SQL } from "drizzle-orm";
 import { articles, sources } from "@/drizzle/schema";
 import { db } from "@/drizzle/db";
+import { cache } from "react";
 
 export type IArticleResponse = {
   id: number;
@@ -24,7 +25,6 @@ export type ISourceResponse = {
 export async function getArticles(
   key?: string,
   page: number = 1,
-  query?: string
 ): Promise<IArticleResponse[]> {
   const pageSize = 12;
   const offset = (page - 1) * pageSize;
@@ -38,15 +38,6 @@ export async function getArticles(
 
   if (key) {
     conditions.push(eq(sources.key, key));
-  }
-
-  if (query) {
-    conditions.push(
-      or(
-        sql`${articles.title} ILIKE ${`%${query}%`}`,
-        sql`${articles.summary} ILIKE ${`%${query}%`}`
-      )!
-    );
   }
 
   const rows = await db
@@ -71,7 +62,9 @@ export async function getArticles(
   return rows as IArticleResponse[];
 }
 
-export async function getSources(): Promise<ISourceResponse[]> {
-  const rows = await db.select().from(sources);
-  return rows as ISourceResponse[];
-}
+export const getSources = cache(
+  async (): Promise<ISourceResponse[]> => {
+    const rows = await db.select().from(sources);
+    return rows as ISourceResponse[];
+  }
+)

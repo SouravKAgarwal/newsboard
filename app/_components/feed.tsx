@@ -7,13 +7,11 @@ import { fetchMoreArticles } from "@/app/actions";
 
 interface FeedProps {
   articles: IArticleResponse[];
-  query?: string;
   sourceKey?: string;
 }
 
 export default function Feed({
   articles: initialArticles,
-  query,
   sourceKey,
 }: FeedProps) {
   const [articles, setArticles] = useState<IArticleResponse[]>(initialArticles);
@@ -24,22 +22,54 @@ export default function Feed({
   useEffect(() => {
     setArticles(initialArticles);
     setPage(1);
-    setHasMore(true);
+    setHasMore(initialArticles.length >= 12);
   }, [initialArticles]);
 
   const loadMore = () => {
     startTransition(async () => {
       const nextPage = page + 1;
-      const newArticles = await fetchMoreArticles(nextPage, query, sourceKey);
+      const newArticles = await fetchMoreArticles(nextPage, sourceKey);
 
-      if (newArticles.length === 0) {
+      if (newArticles.length < 12) {
         setHasMore(false);
-      } else {
+      }
+
+      if (newArticles.length > 0) {
         setArticles((prev) => [...prev, ...newArticles]);
         setPage(nextPage);
       }
     });
   };
+
+  // if ( articles.length === 0) {
+  //   return (
+  //     <div className="flex flex-col items-center justify-center py-20 text-center">
+  //       <div className="bg-gray-100 rounded-full p-6 mb-4">
+  //         <svg
+  //           xmlns="http://www.w3.org/2000/svg"
+  //           fill="none"
+  //           viewBox="0 0 24 24"
+  //           strokeWidth={1.5}
+  //           stroke="currentColor"
+  //           className="w-10 h-10 text-gray-400"
+  //         >
+  //           <path
+  //             strokeLinecap="round"
+  //             strokeLinejoin="round"
+  //             d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+  //           />
+  //         </svg>
+  //       </div>
+  //       <h3 className="text-lg font-semibold text-gray-900 mb-1">
+  //         No articles found
+  //       </h3>
+  //       <p className="text-gray-500 max-w-sm mx-auto">
+  //         We couldn't find any articles matching your search. Try adjusting your
+  //         keywords or checking back later.
+  //       </p>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="space-y-8">
